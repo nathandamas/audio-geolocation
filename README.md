@@ -1,7 +1,7 @@
 # Audio Geolocation
 
 Este código foi desenvolvido como projeto final para a disciplina de CGEO7046 – Tópicos Especiais III Processamento de Linguagem Natural em Ciências Geodésicas - 
-Inteligência Artificial Geoespacial (IAG) e Processamento de Linguagem Natural (PLN) do Programa de Pós Graduação em Ciências Geodésicas (PPGCG) da Universidade Federal do Paraná (UFPR), no ano de 2024. 
+Inteligência Artificial Geoespacial (IAG) e Processamento de Linguagem Natural (PLN) - do Programa de Pós Graduação em Ciências Geodésicas (PPGCG) da Universidade Federal do Paraná (UFPR), no ano de 2024. 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
