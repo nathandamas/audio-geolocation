@@ -30,8 +30,35 @@ To run this project, you will need the following libraries:
 - branca
 
 
-You can install these libraries using pip. Additionally, you will need to install the ffmpeg and portaudio packages:
-```bash
-pip install flask ipython geopy librosa soundfile speech_recognition pyaudio folium branca
 
+
+You can install these libraries using pip. 
+```
+pip install flask ipython geopy librosa soundfile speech_recognition pyaudio folium branca
+```
+Additionally, you will need to install the ffmpeg and portaudio packages:
+```
 sudo apt-get install ffmpeg portaudio19-dev
+```
+Usage
+
+    1. Start the Flask Server
+    2. Audio Processing and Geolocation
+
+Running the Application
+
+    Open the project in Google Colab.
+    Execute the cells in the given order:
+        The cell starting the Flask server.
+        The cell handling the audio recording and geolocation.
+    Follow the instructions to speak the location you want to geolocate.
+    View the resulting map with the specified location marked and listen for the voice feedback on the zoom level.
+
+Notes
+
+Ensure you have an active internet connection for Google Speech Recognition and geocoding services.
+This project is intended to run in a Google Colab environment.
+
+License
+
+This project is licensed under the MIT License.
