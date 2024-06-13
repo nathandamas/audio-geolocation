@@ -24,11 +24,9 @@ To run this project, you will need the following libraries:
 - folium
 - branca
 
-You can install these libraries using pip:
 
+You can install these libraries using pip. Additionally, you will need to install the ffmpeg and portaudio packages:
 ```bash
 pip install flask ipython geopy librosa soundfile speech_recognition pyaudio folium branca
 
-Additionally, you will need to install the ffmpeg and portaudio packages:
-```bash
 sudo apt-get install ffmpeg portaudio19-dev
