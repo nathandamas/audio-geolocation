@@ -2,10 +2,11 @@
 
  ![Badge em Desenvolvimento](https://img.shields.io/badge/license-MIT-blue) 
  
- ![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
+ ![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=yellow&style=for-the-badge)
 
 Este código foi desenvolvido como projeto final para a disciplina de CGEO7046 – Tópicos Especiais III Processamento de Linguagem Natural em Ciências Geodésicas - 
 Inteligência Artificial Geoespacial (IAG) e Processamento de Linguagem Natural (PLN) - do Programa de Pós Graduação em Ciências Geodésicas (PPGCG) da Universidade Federal do Paraná (UFPR), no ano de 2024. 
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 <!-- TABLE OF CONTENTS -->
