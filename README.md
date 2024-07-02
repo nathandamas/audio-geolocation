@@ -1,3 +1,5 @@
+![audio_geolocation_logo_bw](https://github.com/nathandamas/audio-geolocation/assets/19439872/40299b30-7dfb-4316-b0fe-ad0b49c0d278)
+
 # Audio Geolocation
 
  ![Badge em Desenvolvimento](https://img.shields.io/badge/license-MIT-blue) 
