@@ -1,4 +1,5 @@
-![audio_geolocation_logo_bw](https://github.com/nathandamas/audio-geolocation/assets/19439872/40299b30-7dfb-4316-b0fe-ad0b49c0d278)
+![audio_geolocation_logo_bw](https://github.com/nathandamas/audio-geolocation/assets/19439872/7deffa71-c977-4d7b-a181-c08bffc98a12)
+
 
 # Audio Geolocation
 
