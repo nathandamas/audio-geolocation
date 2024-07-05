@@ -47,7 +47,7 @@ To run this project, you will need the following libraries:
 - soundfile
 - speech_recognition
 - pyaudio
-- folium
+- Leaflet
 - branca
 
 
