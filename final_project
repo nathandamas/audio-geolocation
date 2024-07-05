@@ -1,0 +1,403 @@
+!pip install folium
+!pip install geopy
+!pip install SpeechRecognition
+!sudo apt-get install portaudio19-dev
+!pip install PyAudio
+!pip install librosa
+!pip install soundfile
+!apt-get install -y ffmpeg
+!pip install branca
+#-------------------------------------------------------
+# Importação das bibliotecas necessárias
+from IPython.display import display, Javascript
+import base64
+import speech_recognition as sr
+from geopy.geocoders import Nominatim
+import librosa
+import soundfile as sf
+import IPython.display as ipd
+import subprocess
+import os
+import time
+
+# Função JavaScript melhorada para capturar áudio no navegador
+js = """
+async function recordAudio() {
+    const synth = window.speechSynthesis;
+    const utterance1 = new SpeechSynthesisUtterance('Speak slowly the city, state, and country you want to geolocate.');
+    synth.speak(utterance1);
+    await new Promise(resolve => setTimeout(resolve, 7000));  // Wait for the first message to complete
+
+    const utterance2 = new SpeechSynthesisUtterance('Then say "google" to begin and "siri" to end the recording.');
+    synth.speak(utterance2);
+
+    const div = document.createElement('div');
+    const audio = document.createElement('audio');
+    const statusLabel = document.createElement('p');
+    const instructionLabel = document.createElement('p');
+    const recognitionStatusLabel = document.createElement('p');
+
+    instructionLabel.textContent = 'Speak slowly the city, state, and country you want to geolocate:';
+    instructionLabel.style.color = 'green';
+    instructionLabel.style.marginBottom = '10px';
+
+    statusLabel.textContent = 'Ready to record...';
+    statusLabel.style.color = 'blue';
+
+    recognitionStatusLabel.style.color = 'red';
+
+    document.body.appendChild(div);
+    div.appendChild(instructionLabel);
+    div.appendChild(statusLabel);
+    div.appendChild(recognitionStatusLabel);
+    div.appendChild(audio);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    let recorder = new MediaRecorder(stream);
+    let chunks = [];
+    audio.style.display = 'block';
+    audio.srcObject = stream;
+    audio.controls = true;
+    audio.muted = true;
+
+    // Set up speech recognition for start/stop commands
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    let isRecording = false;
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        if (transcript.includes('google') && !isRecording) {
+            recorder.start();
+            isRecording = true;
+            statusLabel.textContent = 'Recording...';
+            recognitionStatusLabel.textContent = 'Command recognized: starting recording';
+            console.log('starting recording');
+        } else if (transcript.includes('siri') && isRecording) {
+            recorder.stop();
+            recognition.stop();
+            isRecording = false;
+            statusLabel.textContent = 'Recording stopped. Processing...';
+            recognitionStatusLabel.textContent = 'Command recognized: stopping recording';
+            console.log('stopping recording');
+        } else {
+            recognitionStatusLabel.textContent = 'Command not recognized. Please say "google" or "siri".';
+            console.log('command not recognized');
+        }
+    };
+
+    recognition.start();
+
+    recorder.ondataavailable = e => chunks.push(e.data);
+    await new Promise(resolve => recorder.onstop = resolve);
+    stream.getTracks().forEach(track => track.stop());
+    div.remove();
+
+    // Use the chunks for the actual recorded audio
+    const audioBlob = new Blob(chunks);
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(audioArrayBuffer)));
+}
+"""
+
+# Função para chamar a gravação de áudio
+def record_audio():
+    display(Javascript(js))
+    from google.colab import output
+    return output.eval_js("recordAudio()")
+
+# Função para verificar e remover arquivo existente
+def remove_file_if_exists(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"Removed existing file: {file_path}")
+
+# Função para converter áudio usando ffmpeg
+def convert_audio(input_file, output_file):
+    # Verificar e remover arquivo de saída existente
+    remove_file_if_exists(output_file)
+
+    # Comando para converter áudio
+    ffmpeg_command = ['ffmpeg', '-i', input_file, output_file]
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(result.stderr.decode())  # Imprimir qualquer mensagem de erro do ffmpeg
+
+# Gravação e processamento de áudio
+audio_base64 = record_audio()
+if audio_base64 is None:
+    raise ValueError("The recorded audio is empty. Please try recording again.")
+audio_data = base64.b64decode(audio_base64)
+with open("audio.webm", "wb") as file:
+    file.write(audio_data)
+print("Audio recorded to:", file.name)
+
+# Verificar se o arquivo de áudio foi salvo corretamente
+if os.path.getsize("audio.webm") == 0:
+    raise ValueError("The recorded audio is empty. Please try recording again.")
+
+# Converter áudio para PCM WAV usando ffmpeg
+convert_audio('audio.webm', 'audio.wav')
+
+# Verificar se o arquivo foi criado
+if not os.path.exists("audio.wav"):
+    raise FileNotFoundError("audio.wav not found. Conversion might have failed.")
+
+try:
+    # Carregar e exibir o áudio gravado
+    audio, sample_rate = librosa.load('audio.wav', sr=None)
+    ipd.display(ipd.Audio(data=audio, rate=sample_rate))
+except Exception as e:
+    print(f"Error loading or displaying audio: {e}")
+
+# Reconhecimento de fala para transcrição
+recognizer = sr.Recognizer()
+with sr.AudioFile('audio.wav') as source:
+    audio_recorded = recognizer.record(source)
+
+    # Lista de idiomas para tentar reconhecer
+    languages = ['pt-BR', 'en-US', 'es-ES']
+    location_input = None
+
+    for language in languages:
+        try:
+            print(f"Trying to recognize speech in {language}...")
+            location_input = recognizer.recognize_google(audio_recorded, language=language)
+            # Remove o comando 'siri' da transcrição, se presente
+            if "siri" in location_input.lower():
+                location_input = location_input.lower().replace("siri", "").strip()
+            print(f"Transcribed location input in {language}: {location_input}")
+            break  # Se o reconhecimento for bem-sucedido, sair do loop
+        except sr.UnknownValueError:
+            print(f"Could not understand audio in {language}")
+        except sr.RequestError as e:
+            print(f"Failed to retrieve results for {language}; check the network connection")
+
+    if location_input is None:
+        print("Failed to recognize speech in all provided languages.")
+
+# Geocodificação e atualização do mapa com geopy
+geolocator = Nominatim(user_agent="geopy_example")
+location = geolocator.geocode(location_input)
+if location:
+    print("Location found:", location.address)
+    print("Latitude:", location.latitude, "\nLongitude:", location.longitude)
+else:
+    print("No location found for the input:", location_input)
+
+#-------------------------------------------------------------------------------
+# Importar bibliotecas para o servidor Flask
+from flask import Flask, render_template_string, request
+from werkzeug.serving import make_server
+import threading
+import IPython.display
+
+# Criar a aplicação Flask
+app = Flask(__name__)
+
+# Função para renderizar a página HTML com controles e o mapa
+def render_page(lat, lon, address):
+    return render_template_string('''
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Map with Voice Reading Control</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                }
+                #controls {
+                    display: flex;
+                    justify-content: center;
+                    padding: 10px;
+                    width: 100%;
+                    background-color: #f4f4f4;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    z-index: 1000;
+                }
+                button {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    margin: 5px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+                #activateButton {
+                    background-color: #f44336;
+                    color: white;
+                }
+                #stopButton {
+                    background-color: #2196F3;
+                    color: white;
+                }
+                #map-container {
+                    width: 100%;
+                    height: calc(100vh - 70px); /* Adjusts the map height */
+                    max-width: 800px;
+                    position: relative;
+                }
+                #map {
+                    width: 100%;
+                    height: 100%;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="controls">
+                <button id="activateButton">🚫🔊 Disable voice reading</button>
+                <button id="stopButton">⏹️ Stop voice reading</button>
+            </div>
+            <div id="map-container">
+                <div id="map"></div>
+            </div>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+            <script>
+                // JavaScript code for controlling voice reading and monitoring map zoom level
+                var synth = window.speechSynthesis;
+                var msg = new SpeechSynthesisUtterance();
+                msg.text = "";
+
+                // Function to speak the text
+                function speak(text) {
+                    msg.text = text;
+                    synth.speak(msg);
+                }
+
+                // Event to disable voice reading
+                document.getElementById('activateButton').onclick = function() {
+                    synth.cancel();
+                    alert('Voice reading disabled');
+                }
+
+                // Event to stop voice reading
+                document.getElementById('stopButton').onclick = function() {
+                    synth.cancel();
+                    alert('Voice reading stopped');
+                }
+
+                // Function to get the map zoom level and read it out loud
+                function readZoomLevel() {
+                    var zoomLevel = map.getZoom();
+                    speak('Zoom level ' + zoomLevel);
+                }
+
+                // Add zoom change event to the map
+                var map = L.map('map').setView([{{ lat }}, {{ lon }}], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                }).addTo(map);
+                map.on('zoomend', function() {
+                    readZoomLevel();
+                });
+
+                // Add marker to the map
+                var marker = L.marker([{{ lat }}, {{ lon }}]).addTo(map)
+                    .bindPopup('{{ address }}')
+                    .openPopup();
+            </script>
+        </body>
+        </html>
+    ''', lat=lat, lon=lon, address=address)
+
+@app.route('/')
+def index():
+    lat = request.args.get('lat', default=45.5236, type=float)
+    lon = request.args.get('lon', default=-122.6750, type=float)
+    address = request.args.get('address', default='Default Location', type=str)
+    return render_page(lat, lon, address)
+
+class ServerThread(threading.Thread):
+    def __init__(self, app, port):
+        threading.Thread.__init__(self)
+        self.port = port
+        self.srv = make_server('127.0.0.1', port, app)
+        self.ctx = app.app_context()
+        self.ctx.push()
+
+    def run(self):
+        print('Starting server on port:', self.port)
+        self.srv.serve_forever()
+
+    def shutdown(self):
+        self.srv.shutdown()
+
+def start_server(port=6060):
+    global server
+    if 'server' in globals() and server:
+        print('Stopping server')
+        stop_server()
+
+    server = ServerThread(app, port)
+    server.start()
+
+def stop_server():
+    global server
+    if server:
+        server.shutdown()
+        server = None
+
+# Iniciar o servidor Flask
+start_server()
+
+#-------------------------------------------------------------------------------
+# Geocodificação e atualização do mapa com geopy
+geolocator = Nominatim(user_agent="geopy_example")
+location = geolocator.geocode(location_input)
+if location:
+    print("Location found:", location.address)
+    print("Latitude:", location.latitude, "\nLongitude:", location.longitude)
+
+    # Abrir o servidor Flask com a localização especificada
+    params = {
+        'lat': location.latitude,
+        'lon': location.longitude,
+        'address': location.address
+    }
+    url = f"http://127.0.0.1:6060/?lat={params['lat']}&lon={params['lon']}&address={params['address']}"
+
+    # Esperar o servidor iniciar
+    time.sleep(2)
+
+    # Exibir o app Flask no notebook
+    def display_map(port, height):
+        shell = """
+            (async () => {
+                const url = await google.colab.kernel.proxyPort(%PORT%, {"cache": true});
+                const iframe = document.createElement('iframe');
+                iframe.src = url + '?lat=' + %LAT% + '&lon=' + %LON% + '&address=' + encodeURIComponent('%ADDRESS%');
+                iframe.setAttribute('width', '100%');
+                iframe.setAttribute('height', '%HEIGHT%');
+                iframe.setAttribute('frameborder', 0);
+                document.body.appendChild(iframe);
+            })();
+        """
+        replacements = [
+            ("%PORT%", "%d" % port),
+            ("%LAT%", "%f" % params['lat']),
+            ("%LON%", "%f" % params['lon']),
+            ("%ADDRESS%", "%s" % params['address']),
+            ("%HEIGHT%", "%d" % height),
+        ]
+        for (k, v) in replacements:
+            shell = shell.replace(k, v)
+
+        script = IPython.display.Javascript(shell)
+        IPython.display.display(script)
+
+    display_map(6060, 600)
+else:
+    print("No location found for the input:", location_input)
