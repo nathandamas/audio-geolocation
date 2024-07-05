@@ -1,0 +1,27 @@
+# Ignorar a pasta node_modules
+node_modules/
+
+# Ignorar arquivos de log
+*.log
+
+# Ignorar arquivos temporários do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignorar arquivos de ambiente
+.env
+
+# Ignorar arquivos de build
+dist/
+build/
+
+# Ignorar arquivos de IDEs
+.idea/
+.vscode/
+
+# Ignorar arquivos de backup
+*.bak
+*.tmp
+
+# Negar a exclusão de um arquivo específico
+!.env.example
