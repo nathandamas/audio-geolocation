@@ -7,8 +7,9 @@
 !pip install soundfile
 !apt-get install -y ffmpeg
 !pip install branca
+
 #-------------------------------------------------------
-# Importação das bibliotecas necessárias
+# Import necessary libraries
 from IPython.display import display, Javascript
 import base64
 import speech_recognition as sr
@@ -20,7 +21,7 @@ import subprocess
 import os
 import time
 
-# Função JavaScript melhorada para capturar áudio no navegador
+# Improved JavaScript function to capture audio in the browser
 js = """
 async function recordAudio() {
     const synth = window.speechSynthesis;
@@ -103,29 +104,29 @@ async function recordAudio() {
 }
 """
 
-# Função para chamar a gravação de áudio
+# Function to call audio recording
 def record_audio():
     display(Javascript(js))
     from google.colab import output
     return output.eval_js("recordAudio()")
 
-# Função para verificar e remover arquivo existente
+# Function to check and remove existing file
 def remove_file_if_exists(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
         print(f"Removed existing file: {file_path}")
 
-# Função para converter áudio usando ffmpeg
+# Function to convert audio using ffmpeg
 def convert_audio(input_file, output_file):
-    # Verificar e remover arquivo de saída existente
+    # Check and remove existing output file
     remove_file_if_exists(output_file)
 
-    # Comando para converter áudio
+    # Command to convert audio
     ffmpeg_command = ['ffmpeg', '-i', input_file, output_file]
     result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(result.stderr.decode())  # Imprimir qualquer mensagem de erro do ffmpeg
+    print(result.stderr.decode())  # Print any ffmpeg error message
 
-# Gravação e processamento de áudio
+# Audio recording and processing
 audio_base64 = record_audio()
 if audio_base64 is None:
     raise ValueError("The recorded audio is empty. Please try recording again.")
@@ -134,30 +135,30 @@ with open("audio.webm", "wb") as file:
     file.write(audio_data)
 print("Audio recorded to:", file.name)
 
-# Verificar se o arquivo de áudio foi salvo corretamente
+# Check if the audio file was saved correctly
 if os.path.getsize("audio.webm") == 0:
     raise ValueError("The recorded audio is empty. Please try recording again.")
 
-# Converter áudio para PCM WAV usando ffmpeg
+# Convert audio to PCM WAV using ffmpeg
 convert_audio('audio.webm', 'audio.wav')
 
-# Verificar se o arquivo foi criado
+# Check if the file was created
 if not os.path.exists("audio.wav"):
     raise FileNotFoundError("audio.wav not found. Conversion might have failed.")
 
 try:
-    # Carregar e exibir o áudio gravado
+    # Load and display the recorded audio
     audio, sample_rate = librosa.load('audio.wav', sr=None)
     ipd.display(ipd.Audio(data=audio, rate=sample_rate))
 except Exception as e:
     print(f"Error loading or displaying audio: {e}")
 
-# Reconhecimento de fala para transcrição
+# Speech recognition for transcription
 recognizer = sr.Recognizer()
 with sr.AudioFile('audio.wav') as source:
     audio_recorded = recognizer.record(source)
 
-    # Lista de idiomas para tentar reconhecer
+    # List of languages to try recognizing
     languages = ['pt-BR', 'en-US', 'es-ES']
     location_input = None
 
@@ -165,11 +166,11 @@ with sr.AudioFile('audio.wav') as source:
         try:
             print(f"Trying to recognize speech in {language}...")
             location_input = recognizer.recognize_google(audio_recorded, language=language)
-            # Remove o comando 'siri' da transcrição, se presente
+            # Remove the 'siri' command from transcription, if present
             if "siri" in location_input.lower():
                 location_input = location_input.lower().replace("siri", "").strip()
             print(f"Transcribed location input in {language}: {location_input}")
-            break  # Se o reconhecimento for bem-sucedido, sair do loop
+            break  # If recognition is successful, exit the loop
         except sr.UnknownValueError:
             print(f"Could not understand audio in {language}")
         except sr.RequestError as e:
@@ -178,7 +179,7 @@ with sr.AudioFile('audio.wav') as source:
     if location_input is None:
         print("Failed to recognize speech in all provided languages.")
 
-# Geocodificação e atualização do mapa com geopy
+# Geocoding and map updating with geopy
 geolocator = Nominatim(user_agent="geopy_example")
 location = geolocator.geocode(location_input)
 if location:
@@ -188,16 +189,16 @@ else:
     print("No location found for the input:", location_input)
 
 #-------------------------------------------------------------------------------
-# Importar bibliotecas para o servidor Flask
+# Import libraries for Flask server
 from flask import Flask, render_template_string, request
 from werkzeug.serving import make_server
 import threading
 import IPython.display
 
-# Criar a aplicação Flask
+# Create Flask application
 app = Flask(__name__)
 
-# Função para renderizar a página HTML com controles e o mapa
+# Function to render HTML page with controls and the map
 def render_page(lat, lon, address):
     return render_template_string('''
         <!DOCTYPE html>
@@ -350,18 +351,18 @@ def stop_server():
         server.shutdown()
         server = None
 
-# Iniciar o servidor Flask
+# Start Flask server
 start_server()
 
 #-------------------------------------------------------------------------------
-# Geocodificação e atualização do mapa com geopy
+# Geocoding and map updating with geopy
 geolocator = Nominatim(user_agent="geopy_example")
 location = geolocator.geocode(location_input)
 if location:
     print("Location found:", location.address)
     print("Latitude:", location.latitude, "\nLongitude:", location.longitude)
 
-    # Abrir o servidor Flask com a localização especificada
+    # Open Flask server with specified location
     params = {
         'lat': location.latitude,
         'lon': location.longitude,
@@ -369,10 +370,10 @@ if location:
     }
     url = f"http://127.0.0.1:6060/?lat={params['lat']}&lon={params['lon']}&address={params['address']}"
 
-    # Esperar o servidor iniciar
+    # Wait for the server to start
     time.sleep(2)
 
-    # Exibir o app Flask no notebook
+    # Display the Flask app in the notebook
     def display_map(port, height):
         shell = """
             (async () => {
